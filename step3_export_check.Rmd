@@ -1,0 +1,44 @@
+---
+title: "Step 3: create_export_check"
+author: "Caylyn and Rose"
+date: "7/21/2021"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+```
+
+
+
+```{r}
+#List of files used 
+sample.list <- read.table("~/Desktop/Lab_Work/linc_RNA/phenotyping/Script/rose_script/R2_Clean.txt", 
+                          sep ="\t", header = F)
+sample.list
+
+
+#Export files (OPTIONAL)
+raspiS_cameraA.transform <- read.csv(paste0("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/",sample.list[1,1],".csv"), header = T)
+raspiS_cameraB.transform <- read.csv(paste0("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/",sample.list[2,1],".csv"), header = T)
+raspiU_cameraA.transform <- read.csv(paste0("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/",sample.list[3,1],".csv"), header = T)
+raspiU_cameraB.transform <- read.csv(paste0("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/",sample.list[4,1],".csv"), header = T)
+raspiT_cameraA.transform <- read.csv(paste0("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/",sample.list[5,1],".csv"), header = T)
+raspiT_cameraB.transform <- read.csv(paste0("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/",sample.list[6,1],".csv"), header = T)
+
+#Change data types of columns to make sure all column data types match
+raspiU_cameraA.transform$in_bounds <- as.character(raspiU_cameraA.transform$in_bounds)
+raspiU_cameraA.transform$object_in_frame <- as.character(raspiU_cameraA.transform$object_in_frame)  
+
+#Create Meta phenotype sheet by combining multiple files
+merge_list <- lapply(ls(pattern = "raspi"), get)
+raspi_combined <- bind_rows(raspiS_cameraA.transform, raspiS_cameraB.transform, raspiT_cameraA.transform, raspiT_cameraB.transform, raspiU_cameraA.transform, raspiU_cameraB.transform)
+
+
+raspi_clean <- raspi_combined[,c(4,17,18,19,20,21,22,23,24,25,26,27,28,29)]
+write.csv(raspi_clean, "~/Desktop/export.check.csv", row.names = F)
+
+```
+```
+

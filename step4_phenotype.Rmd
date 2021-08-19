@@ -1,0 +1,375 @@
+---
+title: "Step4_phenotype"
+author: "Caylyn and Rose"
+date: "7/26/2021"
+output: html_document
+---
+
+###libraries
+```{r}
+install.packages("tidyr")
+install.packages("dplyr")
+install.packages("corrplot")
+install.packages("reshape2")
+install.packages("tidyverse")
+install.packages("ggpubr")
+install.packages("directlabels")
+install.packages("ggplot2")
+install.packages("plotly")
+library(tidyr)
+library(dplyr)
+library(corrplot)
+library(reshape2)
+library(tidyverse)
+library(ggpubr)
+library(directlabels)
+library(ggplot2)
+library(plotly)Yes
+```
+
+
+### Allocating known genotype to each plant
+```{r}
+
+raspi_clean <- read.csv("~/Desktop/export.check.csv", header = T)
+raspi_clean$raspi.ID <- as.character(raspi_clean$raspi.ID)
+unique(raspi_clean$raspi.ID)
+
+#Change genotype ID to each certain plant
+Map <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Script/rose_script/control_exp_ml_geno_R2.csv", header = T)
+Map$Raspi <- as.character(Map$Raspi)
+Map$Geno <- as.character(Map$Geno)
+Map$Camera <- as.character(Map$Camera)
+
+raspi_clean$Cam.ID <- as.character(raspi_clean$Cam.ID)
+raspi_clean$Geno = "genotype"
+
+
+
+#replacing each genotype based on Slots
+for (i in 1: nrow(Map)){
+  if(nrow(raspi_clean[raspi_clean$raspi.ID == Map[i,1] & raspi_clean$Cam.ID == Map[i,2] & raspi_clean$ID == Map[i,4],]) == 0) next
+  raspi_clean[raspi_clean$raspi.ID == Map[i,1] & raspi_clean$Cam.ID == Map[i,2] & raspi_clean$ID == Map[i,4],]$Geno = Map[i,5]
+}
+
+```
+
+```{r}
+#Re-oder dataframe based on Time and genotype
+raspi_clean <- raspi_clean[
+  order(raspi_clean[,14], raspi_clean[,6], raspi_clean[,15]),
+]
+
+#import select files to select plants of interests
+select <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Script/rose_script/control_exp_select_R2.csv", header = T)
+
+raspi_clean$select = "select"
+select$Raspi <- as.character(select$Raspi)
+select$camera <- as.character(select$camera)
+
+
+for (i in 1:nrow(select)){
+  if(nrow(raspi_clean[raspi_clean$raspi.ID == select[i,1] & raspi_clean$Cam.ID == select[i,2] & raspi_clean$ID == select[i,3],]) == 0) next
+  raspi_clean[raspi_clean$raspi.ID == select[i,1] & raspi_clean$Cam.ID == select[i,2] & raspi_clean$ID == select[i,3],]$select = "TRUE"
+}
+
+
+raspi_select <- raspi_clean[raspi_clean$select == "TRUE",]
+raspi_final <- raspi_select[raspi_select$Geno != "empty",]
+
+
+raspi_final$ID <- as.character(raspi_final$ID)
+
+```
+
+### Plot Data based on rig
+```{r}
+
+
+rig_plot <- ggplot(data =,raspi_final , aes(x= all.min, y=area, color = ID)) 
+rig_plot <- rig_plot + geom_line(alpha = 0.3,size = 0.6, aes(group= ID)) 
+rig_plot <- rig_plot + facet_wrap(~ raspi.ID + Cam.ID, ncol=2) 
+rig_plot <- rig_plot + xlab("Total Minutes After Start") 
+rig_plot <- rig_plot +  ylab("Leaf area") 
+rig_plot <- rig_plot + xlim(0,15000) + ylim(0,90000)
+
+
+rig_plot
+
+
+```
+
+### Plot Data based on single rig (check) 
+```{r}
+raspiS_cameraA <- raspi_final[raspi_final$raspi.ID == "raspiS" & raspi_final$Cam.ID == "cameraA",]
+
+Srig_plot <- ggplot(data = raspiS_cameraA, aes(x= all.min, y=area, color = ID)) 
+Srig_plot <- Srig_plot + geom_line(alpha = 0.3,size = 0.8, aes(group= ID)) 
+Srig_plot <- Srig_plot + facet_wrap(~ raspi.ID + Cam.ID, ncol=2) 
+Srig_plot <- Srig_plot + xlab("Total Minutes After Start")
+Srig_plot <- Srig_plot +  ylab("Leaf area") + xlim(0,15000) + ylim(0,90000)
+Srig_plot
+
+#write.csv(raspi_clean, "~/Desktop/Raspi_clean_file.csv")
+```
+### Convert plot into plotly
+```{r}     
+ggplotly(Srig_plot)
+```
+
+
+### Add a new index to represent each plant
+```{r}
+raspi_final$Index <- paste0(raspi_final$raspi.ID,"_",raspi_final$Cam.ID,"_",raspi_final$ID)
+```
+
+### Plot data based on genotype
+```{r}
+
+ggplot(data = raspi_final, aes(x= all.min, y=area, color = ID)) + 
+  geom_line(alpha = 0.3,size = 0.8, aes(group= Index)) + facet_wrap(~ Geno, ncol=3) +
+  geom_point(alpha = 0.6,size = 0.4, aes(group= Index)) + facet_wrap(~ Geno, ncol=3) +
+  xlab("Total Minutes After Start") +  ylab("Leaf area") +
+  stat_summary(fun=mean, size=1, geom="line", linetype = "dashed", color = 'red') +
+  xlim(0,15000) + ylim(0,90000) +
+  geom_dl(aes(label = Index), method = list(dl.trans(x = x - 1), "last.points", cex = 0.4))
+
+
+
+```
+
+### Calculate statistics and simplify dataframe
+```{r}
+#Calculate the mean, standard deviation for each genotype under certain condition per time stamp
+raspi_final <- raspi_final
+raspi_final <- raspi_final %>% group_by(all.min,Geno) %>% mutate(Genotype.Rep.number = n())
+raspi_final <- raspi_final %>% group_by(all.min,Geno) %>% mutate(Genotype.area.mean = ave(area))
+raspi_final <- raspi_final %>% group_by(all.min,Geno) %>% mutate(Genotype.area.std = sd(area))
+
+raspi_final <- raspi_final[raspi_final$all.min < 3331 | raspi_final$all.min > 3479,]
+
+
+#Simplify the stats dataframe 
+Raspi_stats <- unique(raspi_final[,c(5,6,7,8,14,15,17,18,19,20)])
+
+```
+
+###calculating growth rate 
+```{r}
+#Build the Table for multiple linear regression to be written
+Growth_rate_rep <- data.frame("Month" = integer(0), 
+                             "Date" = integer(0),"Plant.ID" = character(0), "Genotype"= character(0), 
+                             "intercept" = integer(0), "delta" = integer(0), "R.square" = integer(0))
+
+#Build time schedule
+sub_raspi_rep <- unique(Raspi_stats[,c(1,2,7,6)])
+Growth_rate_rep$Plant.ID <- as.character(Growth_rate_rep$Plant.ID)
+Growth_rate_rep$Genotype <- as.character(Growth_rate_rep$Genotype)
+
+
+#Loop the calculation of linear fit of Day_time growth
+for (x in 1:nrow(sub_raspi_rep)){
+  #Name initial four columns
+  Growth_rate_rep[x,1:4] <- sub_raspi_rep[x, 1:4]
+  
+  #Calculate the intercept
+ Growth_rate_rep[x,5] <- lm(area ~ all.min, raspi_final[raspi_final$Month== as.integer(sub_raspi_rep[x,1]) & 
+                                       raspi_final$Day == as.character(sub_raspi_rep[x,2]) & raspi_final$Geno == as.character(sub_raspi_rep[x,4]) &
+                                       raspi_final$Index == as.character(sub_raspi_rep[x,3]),])$coefficient[[1]]
+  
+  #Calculate the delta
+  Growth_rate_rep[x,6] <- as.numeric(lm(area ~ all.min, raspi_final[raspi_final$Month== as.integer(sub_raspi_rep[x,1]) & 
+                                        raspi_final$Day == as.integer(sub_raspi_rep[x,2]) & raspi_final$Geno == as.character(sub_raspi_rep[x,4]) &
+                                        raspi_final$Index == as.character(sub_raspi_rep[x,3]),])$coefficient[[2]])
+  
+  #Calculate the R.square
+  Growth_rate_rep[x,7] <- summary(lm(area ~ all.min, raspi_final[raspi_final$Month== as.integer(sub_raspi_rep[x,1]) & 
+                                        raspi_final$Day == as.integer(sub_raspi_rep[x,2]) & raspi_final$Geno == as.character(sub_raspi_rep[x,4]) &
+                                        raspi_final$Index == as.character(sub_raspi_rep[x,3]),]))$r.squared
+}
+```
+
+```{r}
+#Clean and write final table
+Growth_rate_rep <- na.omit(Growth_rate_rep)
+head(Growth_rate_rep)
+
+
+Growth_rate_rep <- Growth_rate_rep[Growth_rate_rep$Date > 4,]
+
+for(i in 1:nrow(Growth_rate_rep)){
+  Growth_rate_rep$Rig.ID[i] <- strsplit(Growth_rate_rep$Plant.ID[i], "_")[[1]][1]
+}
+```
+
+
+```{r}
+write.csv(Growth_rate_rep, "~/Desktop/Growth_rate_all_reps2.csv", row.names = FALSE)
+```
+
+### Pair-wise comparison between two genotypes and plot
+```{r}
+
+#raspi_clean <- read.csv("~/Desktop/Growth_rate_all_reps2.csv", header = T)
+
+
+
+#Split into pair-wise comparison groups
+comp_set1 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "SALK_131552",]
+comp_set2 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS801986",]
+comp_set3 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS814327",]
+comp_set4 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS816382",]
+comp_set5 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS817575",]
+comp_set6 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS818434",]
+comp_set7 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS825570",]
+comp_set8 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS826207",]
+comp_set9 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS826972",]
+comp_set10 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS835523",]
+comp_set11 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS835977",]
+comp_set12 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS836960",]
+comp_set13 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS837306",]
+comp_set14 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS837491",]
+comp_set15 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS840658",]
+comp_set16 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "CS840668",]
+comp_set17 <- Growth_rate_rep[Growth_rate_rep$Genotype == "Col-0" | Growth_rate_rep$Genotype == "SALK_080087",]
+
+
+
+plot.df <- data.frame(set = c("comp_set1","comp_set2","comp_set3","comp_set4","comp_set5","comp_set6","comp_set7","comp_set8","comp_set9","comp_set10","comp_set11","comp_set12","comp_set13","comp_set14","comp_set15","comp_set16","comp_set17"),
+                      graph = c("P1","P2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12","P13","P14","P15","P16","P17"))
+  
+
+#plot each pairwise-comparison of the growth rate
+
+for (P in 1:nrow(plot.df)){
+ plot_temp <- ggplot(data = get(plot.df[P,1]), aes(x = Date, y =delta, color = Genotype))+ 
+   
+    #plot each rep
+   geom_line(alpha = 0.2, aes(group= Plant.ID)) + scale_colour_manual(values = c("dodgerblue3", "tomato1")) +
+    #plot average lines
+    stat_summary(fun=mean,  size=0.7, geom="line", linetype = "dashed") +
+    #Add unit to the Y-axis
+    ylab("Growth rate") + xlab("Days after experiment") +
+    theme(legend.position = c(0.8,0.8)) +
+    stat_compare_means(aes(x = Date), label = "p.signif", method = "t.test", hide.ns = T) + xlim(5,15) + ylim(0,20)
+    
+    #assign plot based on object name
+   assign(plot.df[P,2],plot_temp)
+}
+
+P1
+P2
+P3
+P4
+P5
+P6
+P7
+P8
+P9
+P10
+P11
+P12
+P13
+P14
+P15
+P16
+P17
+
+```
+### Pairwise comparison of the growth rate from each two rig
+Checking growth rate between rigs to find any significant differences that we may want to normalize to compare plants across rigs. 
+```{r}
+#Compare S to U
+SU_list <- c("raspiU", "raspiS")
+SU_subset <- subset(Growth_rate_rep, Growth_rate_rep$Rig.ID == SU_list)
+
+SU_graph <-  ggplot(data = SU_subset, aes(x = Date, y =delta, color = Rig.ID))+ 
+    #plot each rep
+    geom_line(alpha = 0.2, aes(group= Plant.ID)) +
+    #plot average lines
+    stat_summary(fun=mean,  size=0.7, geom="line", linetype = "dashed") +
+    #Add unit to the Y-axis
+    ylab("Growth rate") + xlab("Days after experiment") +
+    theme(legend.position = c(0.8,0.8)) +
+    stat_compare_means(aes(x = Date), label = "p.signif", method = "t.test", hide.ns = T) +
+   xlim(5,15) + ylim(0,10)
+SU_graph
+
+ST_list <- c("raspiS", "raspiT")
+ST_subset <- subset(Growth_rate_rep, Growth_rate_rep$Rig.ID == ST_list)
+
+ST_graph <-  ggplot(data = ST_subset, aes(x = Date, y =delta, color = Rig.ID))+ 
+    #plot each rep
+    geom_line(alpha = 0.2, aes(group= Plant.ID)) +
+    #plot average lines
+    stat_summary(fun=mean,  size=0.7, geom="line", linetype = "dashed") +
+    #Add unit to the Y-axis
+    ylab("Growth rate") + xlab("Days after experiment") +
+    theme(legend.position = c(0.8,0.8)) +
+    stat_compare_means(aes(x = Date), label = "p.signif", method = "t.test", hide.ns = T) +
+   xlim(5,15) + ylim(0,10)
+ST_graph
+
+UT_list <- c("raspiU", "raspiT")
+UT_subset <- subset(Growth_rate_rep, Growth_rate_rep$Rig.ID == UT_list)
+
+UT_graph <-  ggplot(data = UT_subset, aes(x = Date, y =delta, color = Rig.ID))+ 
+    #plot each rep
+    geom_line(alpha = 0.2, aes(group= Plant.ID)) +
+    #plot average lines
+    stat_summary(fun=mean,  size=0.7, geom="line", linetype = "dashed") +
+    #Add unit to the Y-axis
+    ylab("Growth rate") + xlab("Days after experiment") +
+    theme(legend.position = c(0.8,0.8)) +
+    stat_compare_means(aes(x = Date), label = "p.signif", method = "t.test", hide.ns = T) +
+   xlim(5,15) + ylim(0,10)
+UT_graph
+```
+### Normalization of leaf area from each raspi rig
+
+
+
+Found significant difference between rig N and P, so we are normalizing leaf area across rigs 
+```{r}
+#group based on each time point under each rig
+#raspi_final <- raspi_final%>%group_by(raspi.ID)%>%mutate(Total_area = sum(area))
+
+#calculate the ratio of area from each plant to total leaf area
+#raspi_final$area_norm <- raspi_final$area/raspi_final$Total_area * 100000000 #relative ratio
+
+
+#Build the Table for multiple linear regression to be written
+#GR_norm <- data.frame("Month" = integer(0), 
+                           #  "Date" = integer(0),"Plant.ID" = character(0), "Genotype"= character(0), 
+                            # "intercept" = integer(0), "delta" = integer(0), "R.square" = integer(0))
+
+#Build time schedule
+#sub_raspi_rep <- unique(Raspi_stats[,c(1,2,7,6)])
+
+#Loop the calculation of linear fit of Day_time growth
+#for (x in 1:nrow(sub_raspi_rep)){
+  #Name initial four columns
+  #GR_norm[x,1:4] <- sub_raspi_rep[x, 1:4]
+  
+  #Calculate the intercept
+  #GR_norm[x,5] <- lm(area_norm ~ all.min, raspi_final[raspi_final$Month== as.character(sub_raspi_rep[x,1]) & 
+                                       # raspi_final$Day == as.character(sub_raspi_rep[x,2]) & #raspi_final$Geno == as.character(sub_raspi_rep[x,4]) &
+                                       # raspi_final$Index == #as.character(sub_raspi_rep[x,3]),])$coefficient[[1]])
+  
+  #Calculate the delta
+  #GR_norm[x,6] <- as.numeric(lm(area_norm ~ all.min, raspi_final[raspi_final$Month== as.character(sub_raspi_rep[x,1]) & 
+                                        #raspi_final$Day == as.character(sub_raspi_rep[x,2]) & #raspi_final$Geno == as.character(sub_raspi_rep[x,4]) &
+                                       # raspi_final$Index == #as.character(sub_raspi_rep[x,3]),])$coefficient[[2]])
+  
+  #Calculate the R.square
+ # GR_norm[x,7] <- summary(lm(area_norm ~ all.min, raspi_select[Raspi_final$Month== as.character(sub_raspi_rep[x,1]) & 
+                                        #raspi_final$Day == as.character(sub_raspi_rep[x,2]) & #raspi_final$Geno == as.character(sub_raspi_rep[x,4]) &
+                                        #raspi_final$Index == as.character(sub_raspi_rep[x,3]),]))$r.squared
+}
+
+#GR_norm  <- GR_norm %>% separate(Plant.ID, c("RasPi.ID","Cam.ID","Plant.ID"))
+#GR_norm$index <- paste0(GR_norm$RasPi.ID,"_",GR_norm$Cam.ID,"_",GR_norm$Plant.ID)
+
+
+```
+

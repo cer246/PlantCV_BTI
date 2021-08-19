@@ -1,0 +1,90 @@
+---
+title: "Step 1: Bind csv files containing trait details"
+author: "Caylyn and Rose"
+output: html_notebook
+---
+
+```{r}
+#Import packages
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("ggplot2")
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+```
+
+
+
+```{r}
+#bind csv files for each camera 
+raspiU_cameraA <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiU_cameraA_R2-single-value-traits.csv")
+
+raspiU_cameraB <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiU_cameraB_R2-single-value-traits.csv")
+
+raspiS_cameraA_0 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiS_cameraA_0-single-value-traits.csv")
+
+raspiS_cameraA_1 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiS_cameraA_1-single-value-traits.csv")
+
+raspiS_cameraA_2 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiS_cameraA_2-single-value-traits.csv")
+
+raspiS_cameraA_3 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiS_cameraA_3-single-value-traits.csv")
+
+raspiS_cameraB_0 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiS_cameraB_0-single-value-traits.csv")
+
+raspiS_cameraB_1 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiS_cameraB_1-single-value-traits.csv")
+
+raspiS_cameraB_2 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiS_cameraB_2-single-value-traits.csv")
+
+raspiS_cameraB_3 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiS_cameraB_3-single-value-traits.csv")
+
+raspiT_cameraA_0 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiT_cameraA_0-single-value-traits.csv")
+
+raspiT_cameraA_1 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiT_cameraA_1-single-value-traits.csv")
+
+raspiT_cameraA_2 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiT_cameraA_2-single-value-traits.csv")
+
+raspiT_cameraB_0 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiT_cameraB_0-single-value-traits.csv")
+
+raspiT_cameraB_1 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiT_cameraB_1-single-value-traits.csv")
+
+raspiT_cameraB_2 <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/raspiT_cameraB_2-single-value-traits.csv")
+```
+
+
+```{r}
+#make clean.csv files
+
+raspiU_cameraA.clean <- raspiU_cameraA
+
+raspiU_cameraB.clean <- raspiU_cameraB
+
+raspiS_cameraA.clean <- bind_rows(raspiS_cameraA_0, raspiS_cameraA_1, raspiS_cameraA_2,raspiS_cameraA_3)
+
+raspiS_cameraB.clean <- bind_rows(raspiS_cameraB_0, raspiS_cameraB_1, raspiS_cameraB_2,raspiS_cameraB_3)
+
+raspiT_cameraA.clean <- bind_rows(raspiT_cameraA_0, raspiT_cameraA_1, raspiT_cameraA_2)
+
+raspiT_cameraB.clean <- bind_rows(raspiT_cameraB_0, raspiT_cameraB_1, raspiT_cameraB_2)
+```
+
+
+```{r}
+#write csv files 
+
+write.csv(raspiU_cameraA.clean, "~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/raspiU_cameraA.clean.csv")
+write.csv(raspiU_cameraB.clean, "~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/raspiU_cameraB.clean.csv")
+
+write.csv(raspiS_cameraA.clean, "~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/raspiS_cameraA.clean.csv")
+write.csv(raspiS_cameraB.clean, "~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/raspiS_cameraB.clean.csv")
+
+write.csv(raspiT_cameraA.clean, "~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/raspiT_cameraA.clean.csv")
+write.csv(raspiT_cameraB.clean, "~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/raspiT_cameraB.clean.csv")
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

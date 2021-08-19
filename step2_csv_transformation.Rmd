@@ -1,0 +1,61 @@
+---
+title: "Step 2: PlantCV_rig_transformation"
+author: "Caylyn and Rose"
+output: html_document
+---
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+```
+
+
+```{r setup, include=FALSE}
+#load phenotyping worksheet
+Raspi <- read.csv("~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/raspiT_cameraB.clean.csv", header = T)
+Raspi
+
+#delete first 15 columns that say "NA" 
+Raspi <- Raspi[,-c(1:15)] 
+Raspi
+
+
+
+#Split Time series information
+Raspi <- Raspi %>% separate(plantID, c("RasPi.ID","Cam.ID", "Year","Month","Day","Hour","Min","Sec", "ID"))
+
+
+#disable the row name
+# transform the character columns into numeric 
+
+trans_list <- c("Year","Month","Day","Hour","Min","Sec")
+
+for (i in 1:length(trans_list)){
+  Raspi[,colnames(Raspi) == trans_list[i]] <- as.numeric(Raspi[,colnames(Raspi) == trans_list[i]])
+}
+
+```
+
+
+
+```{r}
+#Order the time series based on Plant-ID and month-day-hour-min manner
+Raspi <- Raspi[
+  order(Raspi[,18], Raspi[,19], Raspi[,20], Raspi[,21], Raspi[,22], Raspi[,24]),
+]
+```
+
+
+```{r}
+# Transform all timestamps into minutes (where we have to also integrate the month):
+Raspi$month.min <- (Raspi[,20] - Raspi[1,20])*31*24*60
+Raspi$day.min <- (Raspi[,21]-Raspi[1,21])*24*60
+Raspi$hour.min <- (Raspi[,22]-Raspi[1,22])*60
+Raspi$all.min <- Raspi$month.min + Raspi$day.min + Raspi$hour.min  + Raspi$Min
+
+
+write.csv (Raspi,"~/Desktop/Lab_Work/linc_RNA/phenotyping/Round2/Round2_clean_csv_files/r_script_practice/raspiT_cameraB.transform.csv", row.names = F)
+```
+
